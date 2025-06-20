@@ -132,7 +132,7 @@ export const sudo = async (args?: string[]): Promise<string> => {
 // Banner
 export const banner = (args?: string[]): string => {
   return `
-Hey there! Welcome  to the professional site of
+Hey there! Welcome to the professional site of
 
 
 ███╗   ██╗██╗██╗  ██╗    ██╗  ██╗ █████╗  ██████╗  ██████╗  ██████╗ ██████╗ ████████╗
