@@ -133,7 +133,7 @@
 <script>
 (() => {
 'use strict';
-const BUILD = 19;
+const BUILD = 21;
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 
@@ -225,6 +225,15 @@ const IMG = {};
 const NEED = ['zombie-server.png','flaky-imp.png','cacodemon.png','monolith.png','pr-pack.png',
               'clearance-card.png','shotgun-fp.png','shotgun-fp-fire.png','bfg-fp.png','bfg-fp-fire.png','face-calm.png','face-angry.png','face-victory.png'];
 let ready = 0;
+/* Served at an extensionless route like /doom, a relative 'sprites/x.png'
+   resolves against / and 404s. Work out the real directory and retry once. */
+const DIR_PREFIX = (() => {
+  const p = location.pathname;
+  if (p.endsWith('/')) return p;
+  if (/\.[a-z0-9]+$/i.test(p)) return p.slice(0, p.lastIndexOf('/') + 1);
+  return p + '/';
+})();
+
 function cachePixels(name, img) {
   const c = document.createElement('canvas');
   c.width = img.width; c.height = img.height;
@@ -235,9 +244,17 @@ function cachePixels(name, img) {
 }
 NEED.forEach(n => {
   const i = new Image();
+  let retried = false;
   i.onload = () => { try { cachePixels(n, i); } catch (_) {} ready++; };
-  i.onerror = () => ready++;
-  i.src = 'sprites/' + n;
+  i.onerror = () => {
+    if (!retried) {                       // fall back to a plain relative path
+      retried = true;
+      i.src = 'sprites/' + n;
+      return;
+    }
+    ready++;
+  };
+  i.src = DIR_PREFIX + 'sprites/' + n;
   IMG[n] = i;
 });
 
@@ -648,7 +665,8 @@ function step(dt) {
 
   const now = performance.now();
   if (keys['w'] || keys['a'] || keys['s'] || keys['d'] || Math.abs(fwd) + Math.abs(str) > .1) lastActiveAt = now;
-  S.mouseQuiet = isLocked() && !steering() && now - lastActiveAt < 2500 && now - lastMouseAt > 1500;
+  S.mouseQuiet = isLocked() && !steering() && lastMouseAt > 0 &&
+                 now - lastActiveAt < 2500 && now - lastMouseAt > 1500;
   if (toastT && performance.now() > toastT) { toastEl.classList.remove('on'); toastT = 0; }
 }
 
