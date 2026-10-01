@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DOOMOPS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;600;700&display=swap">
+<style>
+  :root{
+    --brass:#A08456; --brass-lo:#5A4630; --gold:#D8A020; --cream:#E8C87C;
+    --ink:#0B0907; --panel:#241C14; --teal:#8FB46A; --teal-lo:#6E8A4E;
+    --red:#D42020; --red-lo:#7A1414; --bone:#C8BCA4;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--ink);color:var(--bone);
+    font-family:'IBM Plex Mono',ui-monospace,monospace;overflow:hidden;
+    -webkit-user-select:none;user-select:none;touch-action:none}
+  #wrap{position:fixed;inset:0}
+  canvas{display:block;width:100%;height:100%;image-rendering:pixelated;cursor:none}
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:rgba(4,9,11,.94);z-index:10;overflow-y:auto}
+  .card{max-width:780px;width:100%;border:3px solid #6E5A3C;background:var(--panel);
+    box-shadow:inset 0 0 0 1px #0B0907, 0 0 40px rgba(0,0,0,.8);
+    padding:28px 30px;position:relative}
+  .card::before{content:"";position:absolute;inset:6px;border:1px solid rgba(160,132,86,.3);pointer-events:none}
+  h1{font-family:'Anton',Impact,sans-serif;font-weight:400;letter-spacing:7px;color:var(--red);
+    margin:0 0 4px;font-size:clamp(40px,9vw,78px);line-height:.95;
+    text-shadow:3px 3px 0 #4A0C0C, 6px 6px 0 #1A0606, 0 0 36px rgba(212,32,32,.45)}
+  h2{font-family:'Anton',Impact,sans-serif;font-weight:400;letter-spacing:4px;color:var(--red);
+    margin:0 0 14px;font-size:30px;text-shadow:2px 2px 0 #4A0C0C}
+  h3{font-family:'Anton',Impact,sans-serif;font-weight:400;letter-spacing:3px;color:var(--gold);
+    margin:20px 0 8px;font-size:17px;text-transform:uppercase}
+  .sub{font-size:12px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:18px}
+  p{line-height:1.6;margin:0 0 12px}
+  ol{margin:0 0 4px;padding-left:20px;line-height:1.75}
+  ol b{color:var(--gold)}
+  .keys{display:grid;grid-template-columns:118px minmax(0,1fr);gap:3px 16px;font-size:14px;margin:12px 0 0}
+  .keys b{color:var(--gold);font-weight:600}
+  .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;align-items:center}
+  button,.btn{font-family:'IBM Plex Mono',monospace;font-size:15px;min-height:46px;padding:10px 20px;
+    border:1px solid var(--brass);background:transparent;color:var(--cream);cursor:pointer;text-decoration:none;
+    display:inline-flex;align-items:center}
+  button:hover,.btn:hover{background:var(--red);border-color:var(--red);color:#F6ECD8}
+  button:focus-visible,.btn:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .primary{border-color:var(--red);color:#FF6A4A}
+  .sens{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--brass)}
+  .sens input{width:150px;accent-color:var(--gold)}
+  table{width:100%;border-collapse:collapse;margin:8px 0 16px;font-size:14px}
+  td{padding:7px 0;border-bottom:1px solid rgba(201,164,92,.22)}
+  td:last-child{text-align:right;color:var(--gold);font-family:'Anton',Impact,sans-serif;font-size:22px;letter-spacing:1px}
+  a{color:var(--gold)}
+  .toast{position:fixed;left:50%;top:13%;transform:translateX(-50%);z-index:9;text-align:center;
+    pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap}
+  .toast.on{opacity:1}
+  .toast .big{font-family:'Anton',Impact,sans-serif;font-size:clamp(19px,3.6vw,31px);letter-spacing:3px;
+    color:#FF5A2A;text-shadow:2px 2px 0 #4A0C0C, 0 0 22px rgba(212,32,32,.5)}
+  .toast .small{font-size:clamp(10px,1.6vw,13px);letter-spacing:3px;text-transform:uppercase;
+    color:var(--bone);margin-top:3px}
+  #touch{position:fixed;inset:0;z-index:8;display:none;pointer-events:none}
+  #touch .pad{position:absolute;bottom:26px;left:22px;width:132px;height:132px;
+    border:2px solid rgba(201,164,92,.5);border-radius:50%;pointer-events:auto}
+  #touch .nub{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;
+    border-radius:50%;background:rgba(201,164,92,.35)}
+  #touch .fire{position:absolute;bottom:38px;right:24px;width:104px;height:104px;border-radius:50%;
+    border:2px solid var(--red);color:#FF6A4A;background:rgba(212,32,32,.14);pointer-events:auto;
+    font-family:'Anton',Impact,sans-serif;font-size:17px;letter-spacing:2px}
+  .skip{position:fixed;top:12px;right:14px;z-index:9;font-size:12px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--brass);text-decoration:none;border:1px solid var(--brass-lo);
+    padding:9px 13px;background:rgba(4,9,11,.72);min-height:44px;display:inline-flex;align-items:center}
+  .skip:hover{border-color:var(--gold);color:var(--gold)}
+  .hidden{display:none !important}
+  .note{font-size:12px;color:#9AB47A;line-height:1.55}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div class="toast" id="toast"><div class="big" id="toastBig"></div><div class="small" id="toastSmall"></div></div>
+<a class="skip" href="https://github.com/nik-hagoort/Portfolio" target="_blank" rel="noopener">Skip to portfolio</a>
+
+<div id="touch">
+  <div class="pad" id="pad"><div class="nub" id="nub"></div></div>
+  <button class="fire" id="fire">FIRE</button>
+</div>
+
+<div class="overlay" id="menu">
+  <div class="card">
+    <h1>DOOMOPS</h1>
+    <div class="sub">E1M1 · The Legacy Estate · build <span id="buildNo">?</span></div>
+    <p>A payroll platform is trapped on <b>~110 App Service plans</b> burning <b>~$412k a year</b>.
+       The estate is overrun. Everything in here is a real problem I solved at work.</p>
+    <h3>Mission</h3>
+    <ol>
+      <li>Retire <b>14 legacy App Service plans</b> — the shambling server racks.</li>
+      <li>Grab the <b>Clearance Card</b> from the room in the far north-east corner.</li>
+      <li>The card unseals the vault in the south. Put <b>The Monolith</b> down.</li>
+    </ol>
+    <p class="note">Flaky Imps and 504 Cacodemons are optional, but they count on the exit tally.
+       Pick up PR Packs for Big Fleet Gun shells — you start with three.</p>
+    <p class="note" id="frameNote" style="display:none">Embedded frames handle mouse capture badly —
+       the browser can report a lock it never enforces, and look stops dead at the frame edge.
+       <b>Open in a full tab</b> for proper mouse look — the button below, or press <b>T</b> any time.</p>
+    <h3>Controls</h3>
+    <div class="keys">
+      <b>W A S D</b><span>move and strafe</span>
+      <b>Mouse</b><span>look · click to fire</span>
+      <b>F2</b><span>capture vs cursor steering</span>
+      <b>← →</b><span>turn, if you prefer keys</span>
+      <b>1 2</b><span>shotgun · Big Fleet Gun</span>
+      <b>Shift</b><span>sprint</span>
+      <b>Tab</b><span>map</span>
+      <b>Esc</b><span>release the mouse</span>
+      <b>F1</b><span>input diagnostics</span>
+      <b id="tabKey" style="display:none">T</b><span id="tabKeyLabel" style="display:none">open in a full tab</span>
+    </div>
+    <div class="row">
+      <button class="primary" id="start">ENTER THE ESTATE</button>
+      <button id="newtab" class="hidden">OPEN IN FULL TAB ↗ <span style="opacity:.6;margin-left:8px">T</span></button>
+      <label class="sens">Look speed
+        <input type="range" id="sens" min="1" max="20" step="1" value="5">
+        <span id="sensVal">5</span>
+      </label>
+    </div>
+    <div class="row">
+      <a class="btn" href="https://github.com/nik-hagoort/Portfolio" target="_blank" rel="noopener">Just show me the résumé</a>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="end"><div class="card" id="endCard"></div></div>
+
+<script>
+(() => {
+'use strict';
+const BUILD = 19;
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+
+/* ---------- level ---------------------------------------------------------
+   1 brass panel · 2 teal tile · 3 rusted bulkhead · 4 vault stone · 5 sealed door */
+const MAP_W = 24, MAP_H = 24;
+const MAP = [
+  '111111111111111111111111',
+  '111111111111111133333331',
+  '110000011111111130000031',
+  '110000000000000000000031',
+  '110000000111111130000031',
+  '110000000000011130000031',
+  '110000000000011133330331',
+  '110110000000010001110111',
+  '110111110000010001110111',
+  '110222222222020002220111',
+  '110200000000000000000111',
+  '110000000000000000002111',
+  '111200000000000000002111',
+  '111200000000000000002111',
+  '111200000000000000002111',
+  '111200000000000000002111',
+  '111200000000000000002111',
+  '111200000000000000002111',
+  '144252222225522222252441',
+  '140000000000000000000041',
+  '140000000000000000000041',
+  '140000000000000000000041',
+  '140000000000000000000041',
+  '144444444444444444444441'
+];
+const at = (x, y) => (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H) ? 1 : +MAP[y | 0][x | 0];
+const isDoor = (x, y) => at(x, y) === 5;
+const solid = (x, y) => { const t = at(x, y); return t !== 0 && !(t === 5 && S.cards > 0); };
+
+/* ---------- content ------------------------------------------------------- */
+const GH = 'https://github.com/nik-hagoort/Portfolio/tree/main/case-studies/';
+const KINDS = {
+  zombie:  { sprite:'zombie-server.png', hp:30,  speed:1.05, dmg:7,  tally:'plans', h:.95, yo:.04,
+             name:'LEGACY APP SERVICE PLAN', hint:'one of 14 · ~$412k/yr estate',
+             toast:'APP SERVICE PLAN RETIRED' },
+  imp:     { sprite:'flaky-imp.png',     hp:22,  speed:2.1,  dmg:6,  tally:'flakes', h:.74, yo:.22,
+             name:'FLAKY TEST',          hint:'10% failure rate · optional',
+             toast:'FLAKY TEST FIXED', toastSub:'failure rate 10% → 0%' },
+  caco:    { sprite:'cacodemon.png',     hp:60,  speed:1.0,  dmg:13, tally:'timeouts', h:1.05, yo:-.2,
+             name:'504 GATEWAY TIMEOUT', hint:'optional · hits hard',
+             toast:'GATEWAY TIMEOUT CLEARED', toastSub:'504s down 97% · 324/hr → 9/hr' },
+  monolith:{ sprite:'monolith.png',      hp:900, speed:.74,  dmg:20, tally:'boss', h:2.0, yo:-.55,
+             name:'THE MONOLITH',        hint:'.NET Framework 4.8 · the final boss',
+             toast:'THE MONOLITH FALLS', toastSub:'83 files rewired · ~31k dead lines removed' }
+};
+const WEAPONS = {
+  shotgun: { sprite:'shotgun-fp.png',    name:'INFRA SHOTGUN', dmg:26, spread:.085, pellets:3,
+             cool:600, kick:24, range:14, scale:.56, fp:true,
+             flashHue:'orange', fireSprite:'shotgun-fp-fire.png' },
+  bfg:     { sprite:'bfg-fp.png',        name:'BIG FLEET GUN', dmg:30, spread:.46, pellets:16,
+             cool:1400, kick:58, range:22, scale:.54, fp:true,
+             flashHue:'green', fireSprite:'bfg-fp-fire.png' }
+};
+
+const S = {
+  px:2.5, py:3.5, dir:0, hp:100, weapon:'shotgun', ammo:{ shotgun:Infinity, bfg:3 },
+  kills:0, plans:0, flakes:0, timeouts:0, cards:0, secrets:0, started:0,
+  over:false, won:false, running:false, kick:0, flash:0, hurt:0, bob:0, lastShot:0,
+  sens:5, showMap:false, diag:false, forceSteer:false, mouseQuiet:false, tabUrl:null, doorNag:0, xhair:0
+};
+const TOTALS = { plans:14, flakes:6, timeouts:3, enemies:24 };
+const ents = [], items = [];
+const add = (kind, x, y) => ents.push({ ...KINDS[kind], kind, x, y, hp:KINDS[kind].hp, alive:true, fade:0, hitAt:0, cool:0 });
+const addItem = (type, x, y, sprite, label, sub) => items.push({ type, x, y, sprite, label, sub, taken:false });
+
+function populate() {
+  ents.length = 0; items.length = 0;
+  [[4.5,3.5],[5.5,5.5],[10.5,3.5],[14.5,3.5],[9.5,6.5],[11.5,7.5],[15.5,8.5],[5.5,11.5],
+   [8.5,12.5],[12.5,13.5],[16.5,12.5],[6.5,15.5],[14.5,16.5],[18.5,14.5]]
+    .forEach(([x, y]) => add('zombie', x, y));
+  [[10.5,7.5],[16.5,8.5],[7.5,13.5],[17.5,15.5],[11.5,16.5],[5.5,20.5]].forEach(([x, y]) => add('imp', x, y));
+  [[19.5,4.5],[9.5,10.5],[17.5,20.5]].forEach(([x, y]) => add('caco', x, y));
+  add('monolith', 11.5, 20.5);
+  addItem('ammo', 3.5, 4.5, 'pr-pack.png', 'PR PACK', '+1 Big Fleet Gun shell');
+  addItem('ammo', 12.5, 11.5, 'pr-pack.png', 'PR PACK', '+1 Big Fleet Gun shell');
+  addItem('ammo', 4.5, 20.5, 'pr-pack.png', 'PR PACK', '+1 Big Fleet Gun shell');
+  addItem('card', 19.5, 2.5, 'clearance-card.png', 'CLEARANCE CARD', 'the vault in the south is open');
+}
+
+/* ---------- sprites ------------------------------------------------------- */
+const IMG = {};
+const NEED = ['zombie-server.png','flaky-imp.png','cacodemon.png','monolith.png','pr-pack.png',
+              'clearance-card.png','shotgun-fp.png','shotgun-fp-fire.png','bfg-fp.png','bfg-fp-fire.png','face-calm.png','face-angry.png','face-victory.png'];
+let ready = 0;
+function cachePixels(name, img) {
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const x = c.getContext('2d');
+  x.drawImage(img, 0, 0);
+  const d = x.getImageData(0, 0, img.width, img.height).data;
+  PIX[name] = { w: img.width, h: img.height, data: new Uint32Array(d.buffer.slice(0)) };
+}
+NEED.forEach(n => {
+  const i = new Image();
+  i.onload = () => { try { cachePixels(n, i); } catch (_) {} ready++; };
+  i.onerror = () => ready++;
+  i.src = 'sprites/' + n;
+  IMG[n] = i;
+});
+
+/* ---------- wall textures, Doom-style with baked light levels -------------- */
+const TEX = 64, LEVELS = 10, REPEAT = 2, TEXTURES = {}, TEXPIX = {}, PIX = {};
+function rnd(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+function bake(id, paint) {
+  const base = document.createElement('canvas'); base.width = base.height = TEX;
+  paint(base.getContext('2d'), rnd(id * 7919 + 13));
+  TEXTURES[id] = [];
+  for (let l = 0; l < LEVELS; l++) {
+    const c = document.createElement('canvas'); c.width = c.height = TEX;
+    const x = c.getContext('2d');
+    x.drawImage(base, 0, 0);
+    x.fillStyle = `rgba(6,4,3,${(1 - l / (LEVELS - 1)) * 0.93})`;
+    x.fillRect(0, 0, TEX, TEX);
+    TEXTURES[id].push(c);
+  }
+  TEXPIX[id] = TEXTURES[id].map(c => {
+    const d = c.getContext('2d').getImageData(0, 0, TEX, TEX).data;
+    return new Uint32Array(d.buffer.slice(0));
+  });
+}
+function grime(x, r, tint, n) {
+  for (let i = 0; i < n; i++) {
+    const gx = r() * TEX, gy = r() * TEX, w = 1 + r() * 7, h = 1 + r() * 11;
+    x.fillStyle = tint.replace('A', (0.05 + r() * 0.14).toFixed(2));
+    x.fillRect(gx, gy, w, h);
+  }
+}
+function rivets(x, color, step, inset) {
+  x.fillStyle = color;
+  for (let y = inset; y < TEX; y += step) for (let px = inset; px < TEX; px += step) {
+    x.fillRect(px, y, 2, 2);
+    x.fillStyle = 'rgba(0,0,0,.35)'; x.fillRect(px + 1, y + 1, 1, 1); x.fillStyle = color;
+  }
+}
+function buildTextures() {
+  // 1 — STARTAN: grey-brown brick bands with a maroon stripe
+  bake(1, (x, r) => {
+    x.fillStyle = '#5A4A3A'; x.fillRect(0, 0, TEX, TEX);
+    for (let y = 0; y < TEX; y += 8) for (let i = 0; i < TEX; i += 16) {
+      const off = (y / 8) % 2 ? 8 : 0;
+      const v = 88 + r() * 32 | 0;
+      x.fillStyle = `rgb(${v},${(v * .82) | 0},${(v * .60) | 0})`;
+      x.fillRect(i + off, y, 15, 7);
+      x.fillStyle = 'rgba(26,18,12,.9)';
+      x.fillRect(i + off + 15, y, 1, 8); x.fillRect(i + off, y + 7, 16, 1);
+    }
+    x.fillStyle = '#5A1610'; x.fillRect(0, 28, TEX, 6);
+    x.fillStyle = '#7E2416'; x.fillRect(0, 28, TEX, 1);
+    x.fillStyle = '#2A0806'; x.fillRect(0, 33, TEX, 1);
+    rivets(x, '#B8A68E', 16, 3);
+    grime(x, r, 'rgba(14,8,4,A)', 70);
+  });
+  // 2 — SLADWALL: green tech panels with a vent
+  bake(2, (x, r) => {
+    x.fillStyle = '#243020'; x.fillRect(0, 0, TEX, TEX);
+    for (let i = 0; i < TEX; i += 32) {
+      x.fillStyle = '#3C5230'; x.fillRect(i + 2, 2, 28, 60);
+      x.fillStyle = '#56784A'; x.fillRect(i + 2, 2, 28, 2);
+      x.fillStyle = '#16200F'; x.fillRect(i + 2, 60, 28, 2); x.fillRect(i + 30, 2, 2, 60);
+      for (let v = 12; v < 52; v += 6) {
+        x.fillStyle = '#1B2616'; x.fillRect(i + 8, v, 16, 3);
+        x.fillStyle = '#48603A'; x.fillRect(i + 8, v + 3, 16, 1);
+      }
+    }
+    x.fillStyle = '#0E1409'; x.fillRect(0, 0, TEX, 2); x.fillRect(0, 62, TEX, 2);
+    rivets(x, '#86A070', 32, 6);
+    grime(x, r, 'rgba(8,14,6,A)', 60);
+  });
+  // 3 — BROWN96: riveted rust-brown metal
+  bake(3, (x, r) => {
+    x.fillStyle = '#4A3424'; x.fillRect(0, 0, TEX, TEX);
+    for (let y = 0; y < TEX; y += 21) {
+      const v = 94 + r() * 26 | 0;
+      x.fillStyle = `rgb(${v},${(v * .68) | 0},${(v * .44) | 0})`;
+      x.fillRect(0, y + 1, TEX, 18);
+      x.fillStyle = '#271A10'; x.fillRect(0, y + 19, TEX, 2);
+    }
+    for (let i = 0; i < 30; i++) {
+      x.fillStyle = `rgba(150,74,28,${(.14 + r() * .3).toFixed(2)})`;
+      x.fillRect(r() * TEX, r() * TEX, 2 + r() * 5, 4 + r() * 18);
+    }
+    rivets(x, '#A68556', 21, 5);
+    grime(x, r, 'rgba(12,7,3,A)', 60);
+  });
+  // 4 — MARBFACE: dark red marble, hot sigil, for the vault
+  bake(4, (x, r) => {
+    x.fillStyle = '#2A1010'; x.fillRect(0, 0, TEX, TEX);
+    for (let i = 0; i < 42; i++) {
+      x.fillStyle = `rgba(${120 + r() * 60 | 0},${30 + r() * 24 | 0},${26 + r() * 20 | 0},${(.10 + r() * .22).toFixed(2)})`;
+      x.fillRect(r() * TEX, r() * TEX, 3 + r() * 22, 1 + r() * 4);
+    }
+    x.fillStyle = '#1A0808'; x.fillRect(0, 0, TEX, 2); x.fillRect(0, 62, TEX, 2);
+    x.strokeStyle = '#FF4A1E'; x.lineWidth = 2; x.globalAlpha = .95;
+    x.beginPath();
+    x.moveTo(10, 54); x.lineTo(10, 26); x.lineTo(22, 12); x.lineTo(32, 24);
+    x.lineTo(42, 12); x.lineTo(54, 26); x.lineTo(54, 54);
+    x.stroke();
+    x.globalAlpha = .3; x.lineWidth = 6; x.stroke(); x.globalAlpha = 1;
+    grime(x, r, 'rgba(10,2,2,A)', 46);
+  });
+  // 5 — locked tech door: grey steel with the yellow key stripe
+  bake(5, (x, r) => {
+    x.fillStyle = '#4C4A46'; x.fillRect(0, 0, TEX, TEX);
+    x.fillStyle = '#6A665E'; x.fillRect(4, 2, 56, 60);
+    x.fillStyle = '#88837A'; x.fillRect(4, 2, 56, 2);
+    x.fillStyle = '#2A2824'; x.fillRect(4, 60, 56, 2);
+    x.fillStyle = '#36332E'; x.fillRect(30, 2, 4, 60);
+    for (let y = 8; y < 58; y += 12) { x.fillStyle = '#3A3730'; x.fillRect(8, y, 20, 8); x.fillRect(36, y, 20, 8); }
+    x.fillStyle = '#D8A020'; x.fillRect(0, 28, TEX, 8);
+    x.fillStyle = '#F2CC55'; x.fillRect(0, 28, TEX, 2);
+    x.fillStyle = '#6A4C08'; x.fillRect(0, 34, TEX, 2);
+    for (let i = 0; i < TEX; i += 8) { x.fillStyle = 'rgba(40,28,4,.55)'; x.fillRect(i, 30, 4, 4); }
+    rivets(x, '#B0ABA0', 20, 8);
+    grime(x, r, 'rgba(10,10,8,A)', 34);
+  });
+}
+
+/* ---------- canvas -------------------------------------------------------- */
+const cvs = document.getElementById('c'), ctx = cvs.getContext('2d', { alpha:false });
+let W = 0, H = 0;
+function resize() {
+  const scale = innerWidth > 1100 ? 1.0 : innerWidth > 700 ? 1.2 : 1.6;
+  W = Math.max(160, Math.round(innerWidth / scale));
+  H = Math.max(120, Math.round(innerHeight / scale));
+  cvs.width = W; cvs.height = H;
+  ctx.imageSmoothingEnabled = false;
+}
+addEventListener('resize', resize); resize();
+
+/* ---------- input --------------------------------------------------------- */
+const keys = {};
+const MOUSE_BASE = 0.00014;   // × sens (1-20); default 5 ≈ 0.0007 rad/px ≈ 90° per 2200px swipe
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (['w','a','s','d','1','2',' ','tab','arrowleft','arrowright'].includes(k)) e.preventDefault();
+  keys[k] = true;
+  if (k === '1') S.weapon = 'shotgun';
+  if (k === '2' && S.ammo.bfg > 0) S.weapon = 'bfg';
+  if (k === 'tab') S.showMap = !S.showMap;
+  if (k === 'f1') { e.preventDefault(); S.diag = !S.diag; }
+  if (k === 't' && EMBEDDED) { e.preventDefault(); openFullTab(); }
+  if (k === 'f2') {
+    e.preventDefault();
+    S.forceSteer = !S.forceSteer;
+    try { localStorage.setItem('doomops.steer', S.forceSteer ? '1' : '0'); } catch (_) {}
+    if (S.forceSteer) document.exitPointerLock?.(); else grabMouse();
+    toast(S.forceSteer ? 'CURSOR STEERING' : 'MOUSE CAPTURE', 'F2 switches back');
+  }
+  if (k === ' ') shoot();
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+/* Pointer lock. Two things matter here:
+   - unadjustedMovement skips the OS mouse-acceleration curve, so a fast flick
+     does not arrive as a huge amplified delta.
+   - lock can be refused outright (sandboxed iframe), so there is a drag-to-look
+     fallback and the HUD says what is going on. */
+let lockDenied = false;
+function grabMouse() {
+  if (!cvs.requestPointerLock) { lockDenied = true; return; }
+  const plain = () => {
+    try {
+      const r = cvs.requestPointerLock();
+      if (r && r.catch) r.catch(() => { lockDenied = true; });
+    } catch (_) { lockDenied = true; }
+  };
+  try {
+    const r = cvs.requestPointerLock({ unadjustedMovement: true });
+    if (r && r.catch) r.catch(plain);                  // raw input refused: try plain
+  } catch (_) { plain(); }
+}
+const isLocked = () => document.pointerLockElement === cvs;
+/* A frame may refuse window.open but still allow a real anchor click, so try the
+   anchor first and keep the URL visible if both are refused. */
+/* window.open with 'noopener' returns null even when it succeeds, so ask for a
+   handle first (and sever opener by hand). Only if that is refused do we try an
+   anchor click, which some frames allow when window.open is blocked, and show the
+   address as a last resort. */
+/* Inside an artifact frame, location.href is the sandboxed inner document, which
+   the host refuses to serve top-level (ERR_BLOCKED_BY_RESPONSE). The page that CAN
+   be opened is the parent, which only reaches us via document.referrer. */
+function fullTabUrl() {
+  const ref = document.referrer || '';
+  if (EMBEDDED && /^https?:\/\//.test(ref) && !ref.startsWith(location.origin)) return ref;
+  return location.href;
+}
+function openFullTab() {
+  document.exitPointerLock?.();
+  const url = fullTabUrl();
+  let w = null;
+  try { w = window.open(url, '_blank'); } catch (_) {}
+  if (w) { try { w.opener = null; } catch (_) {} return; }
+  try {
+    const a = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+  } catch (_) {}
+  S.tabUrl = url;
+  toast('OPENING IN A NEW TAB', 'if nothing opened, copy the address shown');
+  setTimeout(() => { S.tabUrl = null; }, 9000);
+}
+document.addEventListener('pointerlockerror', () => { lockDenied = true; }, false);
+document.addEventListener('pointerlockchange', () => { if (isLocked()) lockDenied = false; }, false);
+
+/* Without pointer lock the cursor stops at the window edge and movementX dies with
+   it, so a delta-based fallback dead-ends exactly where you need to keep turning.
+   Steer by cursor POSITION instead: offset from centre is a turn rate, which can
+   never run out of room. */
+let steerX = null;
+const EMBEDDED = (() => { try { return window.top !== window.self; } catch (_) { return true; } })();
+const steering = () => lockDenied || S.forceSteer;
+cvs.addEventListener('mousedown', e => {
+  if (!S.running) return;
+  if (isLocked() || steering()) { shoot(); return; }
+  grabMouse();
+});
+addEventListener('mousemove', e => {
+  if (!steering() || !S.running) return;
+  const r = cvs.getBoundingClientRect();
+  if (!r.width) return;
+  // clamped, so leaving the canvas pins the turn at full rate instead of stopping
+  steerX = clamp((e.clientX - r.left) / r.width * 2 - 1, -1, 1);
+}, true);
+let pendingTurn = 0;
+let mmCount = 0, mmSum = 0, mmMax = 0, mmWindow = 0;
+let lastMouseAt = 0, lastActiveAt = 0, relockAt = 0, starvedSince = 0;
+addEventListener('mousemove', e => {
+  if (!S.running) return;
+  const mx = e.movementX || 0;
+  mmCount++; mmSum += Math.abs(mx); mmMax = Math.max(mmMax, Math.abs(mx));
+  if (mx) { lastMouseAt = performance.now(); starvedSince = 0; }
+  if (!isLocked() || steering()) return;   // unlocked turning is handled by steerX
+  // a single event can carry a huge delta after an alt-tab or a flick; cap it
+  pendingTurn += clamp(mx, -140, 140) * MOUSE_BASE * S.sens;
+});
+document.getElementById('buildNo').textContent = BUILD;
+try { S.forceSteer = localStorage.getItem('doomops.steer') === '1'; } catch (_) {}
+const sensEl = document.getElementById('sens'), sensVal = document.getElementById('sensVal');
+try { const v = +localStorage.getItem('doomops.sens'); if (v) { S.sens = v; sensEl.value = v; } } catch (_) {}
+sensVal.textContent = S.sens;
+sensEl.addEventListener('input', () => {
+  S.sens = +sensEl.value; sensVal.textContent = S.sens;
+  try { localStorage.setItem('doomops.sens', S.sens); } catch (_) {}
+});
+
+const touchEl = document.getElementById('touch'), nub = document.getElementById('nub');
+let move = { x:0, y:0 }, padId = null, padOrigin = null, lookId = null, lookX = 0;
+if (matchMedia('(pointer: coarse)').matches) touchEl.style.display = 'block';
+const pad = document.getElementById('pad');
+pad.addEventListener('touchstart', e => {
+  const t = e.changedTouches[0]; padId = t.identifier;
+  const r = pad.getBoundingClientRect(); padOrigin = { x:r.left + r.width / 2, y:r.top + r.height / 2 };
+  e.preventDefault();
+}, { passive:false });
+cvs.addEventListener('touchstart', e => {
+  const t = e.changedTouches[0]; lookId = t.identifier; lookX = t.clientX;
+}, { passive:true });
+addEventListener('touchmove', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === padId && padOrigin) {
+      const dx = clamp((t.clientX - padOrigin.x) / 56, -1, 1), dy = clamp((t.clientY - padOrigin.y) / 56, -1, 1);
+      move = { x:dx, y:-dy };
+      nub.style.transform = `translate(${dx * 34}px,${dy * 34}px)`;
+    } else if (t.identifier === lookId) {
+      S.dir += (t.clientX - lookX) * 0.0007 * S.sens; lookX = t.clientX;
+    }
+  }
+}, { passive:true });
+addEventListener('touchend', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === padId) { padId = null; move = { x:0, y:0 }; nub.style.transform = ''; }
+    if (t.identifier === lookId) lookId = null;
+  }
+});
+document.getElementById('fire').addEventListener('click', e => { e.preventDefault(); shoot(); });
+
+/* ---------- toast --------------------------------------------------------- */
+const toastEl = document.getElementById('toast'), tBig = document.getElementById('toastBig'),
+      tSmall = document.getElementById('toastSmall');
+let toastT = 0;
+function toast(big, small) {
+  tBig.textContent = big; tSmall.textContent = small || '';
+  toastEl.classList.add('on'); toastT = performance.now() + 1900;
+}
+
+/* ---------- combat -------------------------------------------------------- */
+function shoot() {
+  if (!S.running || S.over) return;
+  const w = WEAPONS[S.weapon], now = performance.now();
+  if (now - S.lastShot < w.cool) return;
+  if (S.ammo[S.weapon] <= 0) { S.weapon = 'shotgun'; return; }
+  S.lastShot = now; S.kick = w.kick; S.flash = 1; S.xhair = 1;
+  if (S.ammo[S.weapon] !== Infinity) S.ammo[S.weapon]--;
+  let hits = 0;
+  for (let p = 0; p < w.pellets; p++) {
+    const a = S.dir + (w.pellets === 1 ? 0 : (p / (w.pellets - 1) - .5) * w.spread * 2);
+    const t = castAtEntity(a, w.range);
+    if (t) { damage(t, w.dmg, now); hits++; }
+  }
+  if (S.weapon === 'bfg' && hits > 2) toast('BIG FLEET GUN', 'the whole fleet moves at once');
+}
+function castAtEntity(angle, range) {
+  const dx = Math.cos(angle), dy = Math.sin(angle);
+  let best = null, bestD = range;
+  for (const e of ents) {
+    if (!e.alive) continue;
+    const ox = e.x - S.px, oy = e.y - S.py;
+    const along = ox * dx + oy * dy;
+    if (along <= 0 || along > bestD) continue;
+    if (Math.abs(ox * dy - oy * dx) > .42 * e.h) continue;
+    if (wallBetween(S.px, S.py, e.x, e.y)) continue;
+    best = e; bestD = along;
+  }
+  return best;
+}
+function damage(e, dmg, now) {
+  e.hp -= dmg; e.hitAt = now;
+  if (e.hp > 0 || !e.alive) return;
+  e.alive = false; e.fade = 1; S.kills++;
+  if (e.tally === 'plans') {
+    S.plans++;
+    toast(e.toast, `${S.plans} of ${TOTALS.plans} retired · ${TOTALS.plans - S.plans} left`);
+  } else if (e.tally === 'boss') {
+    toast(e.toast, e.toastSub); finish(true);
+  } else {
+    if (e.tally === 'flakes') S.flakes++; else S.timeouts++;
+    toast(e.toast, e.toastSub);
+  }
+}
+function wallBetween(x0, y0, x1, y1) {
+  const steps = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 8);
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps;
+    if (solid(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t)) return true;
+  }
+  return false;
+}
+
+/* ---------- objective ----------------------------------------------------- */
+function objective() {
+  if (S.plans < TOTALS.plans && !S.cards)
+    return [`RETIRE LEGACY PLANS  ${S.plans}/${TOTALS.plans}`, 'then find the Clearance Card, far north-east'];
+  if (!S.cards) return ['FIND THE CLEARANCE CARD', 'far north-east room'];
+  const boss = ents.find(e => e.kind === 'monolith');
+  if (boss && boss.alive) return ['KILL THE MONOLITH', 'the vault in the south is open'];
+  return ['ESTATE CLEARED', ''];
+}
+
+/* ---------- update -------------------------------------------------------- */
+function step(dt) {
+  const sprint = keys['shift'] ? 1.65 : 1;
+  let fwd = clamp((keys['w'] ? 1 : 0) - (keys['s'] ? 1 : 0) + move.y, -1, 1);
+  let str = clamp((keys['d'] ? 1 : 0) - (keys['a'] ? 1 : 0) + move.x, -1, 1);
+  const turn = 1.5 + S.sens * 0.07;
+  if (keys['arrowleft']) S.dir -= turn * dt;
+  if (keys['arrowright']) S.dir += turn * dt;
+  const sp = 3.0 * sprint * dt;
+  const nx = S.px + (Math.cos(S.dir) * fwd - Math.sin(S.dir) * str) * sp;
+  const ny = S.py + (Math.sin(S.dir) * fwd + Math.cos(S.dir) * str) * sp;
+  const pad2 = .24;
+  if (!solid(nx + Math.sign(nx - S.px) * pad2, S.py)) S.px = nx;
+  if (!solid(S.px, ny + Math.sign(ny - S.py) * pad2)) S.py = ny;
+  if (Math.abs(fwd) + Math.abs(str) > .1) S.bob += dt * 8.5 * sprint;
+  if (!S.cards && isDoor(nx, ny) && performance.now() > S.doorNag) {
+    S.doorNag = performance.now() + 2400;
+    toast('SEALED', 'the Clearance Card is in the far north-east room');
+  }
+
+  for (const e of ents) {
+    if (!e.alive) { e.fade = Math.max(0, e.fade - dt * 1.5); continue; }
+    const dx = S.px - e.x, dy = S.py - e.y, d = Math.hypot(dx, dy);
+    if (d >= 11 || wallBetween(e.x, e.y, S.px, S.py)) continue;
+    if (d > .9) {
+      const vx = (dx / d) * e.speed * dt, vy = (dy / d) * e.speed * dt;
+      if (!solid(e.x + vx * 2.5, e.y)) e.x += vx;
+      if (!solid(e.x, e.y + vy * 2.5)) e.y += vy;
+    } else {
+      e.cool -= dt;
+      if (e.cool <= 0) {
+        e.cool = 1.1; S.hp -= e.dmg; S.hurt = 1;
+        if (S.hp <= 0) { S.hp = 0; finish(false); }
+      }
+    }
+  }
+  for (const it of items) {
+    if (it.taken || Math.hypot(it.x - S.px, it.y - S.py) > .65) continue;
+    it.taken = true;
+    if (it.type === 'ammo') { S.ammo.bfg++; S.secrets++; toast('PR PACK', it.sub); }
+    else { S.cards++; toast('CLEARANCE CARD', it.sub); }
+  }
+  if (steering() && steerX !== null) {
+    const dead = .14;                                     // centre band that does not turn
+    const mag = Math.abs(steerX) < dead ? 0 : (Math.abs(steerX) - dead) / (1 - dead);
+    S.dir += Math.sign(steerX) * mag * mag * 3.2 * dt;     // squared: fine aim near centre
+  }
+  // drain the queued mouse turn smoothly rather than snapping to it
+  const take = pendingTurn * Math.min(1, dt * 32);
+  S.dir += take; pendingTurn -= take;
+  if (Math.abs(pendingTurn) < 1e-5) pendingTurn = 0;
+  S.kick = Math.max(0, S.kick - dt * 140);
+  S.flash = Math.max(0, S.flash - dt * 7);
+  S.hurt = Math.max(0, S.hurt - dt * 3.0);
+  S.xhair = Math.max(0, S.xhair - dt * 4);
+  mmWindow += dt;
+  if (mmWindow >= 1) { mmWindow = 0; mmCount = 0; mmSum = 0; mmMax = 0; }
+
+  const now = performance.now();
+  if (keys['w'] || keys['a'] || keys['s'] || keys['d'] || Math.abs(fwd) + Math.abs(str) > .1) lastActiveAt = now;
+  S.mouseQuiet = isLocked() && !steering() && now - lastActiveAt < 2500 && now - lastMouseAt > 1500;
+  if (toastT && performance.now() > toastT) { toastEl.classList.remove('on'); toastT = 0; }
+}
+
+/* ---------- render ----------------------------------------------------------
+   Walls, floor, ceiling and sprites are written straight into one ImageData and
+   blitted once. The old path issued ~1700 drawImage calls per frame, which made
+   frame time lumpy and turning feel like it was stepping.                      */
+const FOV = Math.PI / 2;        // 90°, as Doom had it
+const zbuf = new Float32Array(4096);
+let aimed = null;
+let frameImg = null, frame32 = null, skyRow = null;
+
+function ensureFrame() {
+  if (frameImg && frameImg.width === W && frameImg.height === H) return;
+  frameImg = ctx.createImageData(W, H);
+  frame32 = new Uint32Array(frameImg.data.buffer);
+  skyRow = new Uint32Array(H);                 // ceiling and floor are flat gradients
+  for (let y = 0; y < H; y++) {
+    let r, g, b;
+    if (y < H / 2) {
+      const t = y / (H / 2);
+      r = 10 + t * 26 | 0; g = 9 + t * 21 | 0; b = 8 + t * 16 | 0;
+    } else {
+      const t = (y - H / 2) / (H / 2);
+      r = 23 + t * 51 | 0; g = 19 + t * 39 | 0; b = 16 + t * 24 | 0;
+      if ((((y - (H >> 1)) * 0.17) | 0) % 2) { r = r * .82 | 0; g = g * .82 | 0; b = b * .82 | 0; }
+    }
+    skyRow[y] = 0xFF000000 | (b << 16) | (g << 8) | r;
+  }
+}
+
+function render() {
+  ensureFrame();
+  for (let y = 0; y < H; y++) frame32.fill(skyRow[y], y * W, y * W + W);
+
+  const bobY = Math.sin(S.bob) * 1.5 | 0;
+  const tanHalf = Math.tan(FOV / 2);
+  for (let col = 0; col < W; col++) {
+    const camX = 2 * col / W - 1;
+    const ra = S.dir + Math.atan(camX * tanHalf);
+    const rdx = Math.cos(ra), rdy = Math.sin(ra);
+    let mx = S.px | 0, my = S.py | 0;
+    const ddx = Math.abs(1 / (rdx || 1e-9)), ddy = Math.abs(1 / (rdy || 1e-9));
+    let sx, sy, sdx, sdy;
+    if (rdx < 0) { sx = -1; sdx = (S.px - mx) * ddx; } else { sx = 1; sdx = (mx + 1 - S.px) * ddx; }
+    if (rdy < 0) { sy = -1; sdy = (S.py - my) * ddy; } else { sy = 1; sdy = (my + 1 - S.py) * ddy; }
+    let side = 0, tile = 0, guard = 0;
+    while (guard++ < 160) {
+      if (sdx < sdy) { sdx += ddx; mx += sx; side = 0; } else { sdy += ddy; my += sy; side = 1; }
+      tile = at(mx, my);
+      if (tile) break;
+    }
+    const dist = side === 0 ? (mx - S.px + (1 - sx) / 2) / (rdx || 1e-9)
+                            : (my - S.py + (1 - sy) / 2) / (rdy || 1e-9);
+    const d = Math.max(.08, dist * Math.cos(ra - S.dir));
+    zbuf[col] = d;
+
+    const hgt = (H / d) | 0;
+    const top = ((H - hgt) >> 1) + bobY;
+    let hitX = side === 0 ? S.py + d * rdy : S.px + d * rdx;
+    hitX -= Math.floor(hitX);
+    if ((side === 0 && rdx > 0) || (side === 1 && rdy < 0)) hitX = 1 - hitX;
+    let hx = hitX * REPEAT; hx -= Math.floor(hx);
+    const texX = (hx * TEX) | 0;
+
+    const lit = 1 - d / 15 - (side ? .18 : 0) + S.flash * .45;
+    const lvl = lit <= 0 ? 0 : lit >= 1 ? LEVELS - 1 : Math.round(lit * (LEVELS - 1));
+    const tex = (TEXPIX[tile] || TEXPIX[1])[lvl];
+
+    const y0 = top < 0 ? 0 : top, y1 = top + hgt > H ? H : top + hgt;
+    const stepV = TEX * REPEAT / hgt;
+    let texV = (y0 - top) * stepV;
+    for (let y = y0; y < y1; y++) {
+      frame32[y * W + col] = tex[(((texV | 0) & (TEX - 1)) * TEX) + texX];
+      texV += stepV;
+    }
+  }
+
+  const draw = [];
+  for (const e of ents) if (e.alive || e.fade > 0)
+    draw.push({ o:e, name:e.sprite, h:e.h, yoff:e.yo, fade:e.alive ? 1 : e.fade, hit:e.hitAt });
+  for (const it of items) if (!it.taken)
+    draw.push({ o:it, name:it.sprite, h:.45, yoff:.34, fade:1, bobble:true });
+  draw.sort((a, b) => Math.hypot(b.o.x - S.px, b.o.y - S.py) - Math.hypot(a.o.x - S.px, a.o.y - S.py));
+  const now = performance.now();
+  aimed = null;
+  for (const s of draw) {
+    const pix = PIX[s.name];
+    if (!pix) continue;
+    const ox = s.o.x - S.px, oy = s.o.y - S.py, dist = Math.hypot(ox, oy);
+    if (dist > 22 || dist < .12) continue;
+    let rel = Math.atan2(oy, ox) - S.dir;
+    while (rel > Math.PI) rel -= TAU;
+    while (rel < -Math.PI) rel += TAU;
+    if (Math.abs(rel) > FOV * .8) continue;
+    const screenX = (W / 2 + Math.tan(rel) / tanHalf * (W / 2)) | 0;
+    const sh = (H / dist * s.h) | 0;
+    const sw = (sh * (pix.w / pix.h)) | 0;
+    if (sh < 1 || sw < 1) continue;
+    const bobble = s.bobble ? Math.sin(now / 420 + s.o.x * 3) * sh * .09 : 0;
+    const top = ((H - H / dist) / 2 + bobY + (H / dist) * (s.yoff ?? 0) + bobble) | 0;
+    const x0 = screenX - (sw >> 1);
+    const xa = x0 < 0 ? 0 : x0, xb = x0 + sw > W ? W : x0 + sw;
+    const ya = top < 0 ? 0 : top, yb = top + sh > H ? H : top + sh;
+    const flashHit = s.hit && now - s.hit < 90;
+    const faded = s.fade < 1;
+    const sxStep = pix.w / sw, syStep = pix.h / sh;
+    for (let x = xa; x < xb; x++) {
+      if (zbuf[x] <= dist) continue;
+      const sxp = ((x - x0) * sxStep) | 0;
+      let syf = (ya - top) * syStep;
+      for (let y = ya; y < yb; y++) {
+        const p = pix.data[((syf | 0) * pix.w) + sxp];
+        syf += syStep;
+        if ((p >>> 24) < 128) continue;
+        const i = y * W + x;
+        if (flashHit) {
+          const r = Math.min(255, (p & 255) + 90), g = Math.min(255, (p >> 8 & 255) + 70),
+                b = Math.min(255, (p >> 16 & 255) + 60);
+          frame32[i] = 0xFF000000 | (b << 16) | (g << 8) | r;
+        } else if (faded) {
+          const dst = frame32[i], f = s.fade, inv = 1 - f;
+          const r = ((p & 255) * f + (dst & 255) * inv) | 0;
+          const g = ((p >> 8 & 255) * f + (dst >> 8 & 255) * inv) | 0;
+          const b = ((p >> 16 & 255) * f + (dst >> 16 & 255) * inv) | 0;
+          frame32[i] = 0xFF000000 | (b << 16) | (g << 8) | r;
+        } else {
+          frame32[i] = p;
+        }
+      }
+    }
+    if (s.o.alive && Math.abs(screenX - W / 2) < sw * .4 && zbuf[W >> 1] > dist &&
+        (!aimed || dist < aimed.dist)) aimed = { e:s.o, dist };
+  }
+
+  ctx.putImageData(frameImg, 0, 0);
+
+  if (S.flash > 0) { ctx.fillStyle = `rgba(255,214,130,${S.flash * .20})`; ctx.fillRect(0, 0, W, H); }
+  if (S.hurt > 0) { ctx.fillStyle = `rgba(200,26,18,${S.hurt * .26})`; ctx.fillRect(0, 0, W, H); }
+  drawWeapon();
+  drawCrosshair();
+  drawTarget();
+  drawObjective();
+  if (S.showMap) drawMap();
+  drawHUD();
+  if (S.running && !isLocked()) drawLockPrompt();
+  if (S.diag) drawDiag();
+  if (S.mouseQuiet) drawQuietHint();
+  if (S.tabUrl) drawTabUrl();
+}
+
+/* Shown when the pointer is locked but no mouse data is arriving — the embedded
+   frame symptom. Advisory only: the player chooses. */
+function drawTabUrl() {
+  const f = Math.max(9, Math.round(H * .019));
+  ctx.font = `${f}px 'IBM Plex Mono', monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const l1 = 'if no tab opened, paste this into a new tab:';
+  const w = Math.max(ctx.measureText(l1).width, ctx.measureText(S.tabUrl).width) + 30;
+  const y = Math.round(H * .30);
+  ctx.fillStyle = 'rgba(10,8,6,.9)'; ctx.fillRect(W / 2 - w / 2, y - 5, w, f * 2.9);
+  ctx.fillStyle = '#8A7558'; ctx.fillRect(W / 2 - w / 2, y - 5, w, 2);
+  ctx.fillStyle = '#C8BCA4'; ctx.fillText(l1, W / 2, y + 2);
+  ctx.fillStyle = '#D8A020'; ctx.fillText(S.tabUrl, W / 2, y + f * 1.45);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+function drawQuietHint() {
+  const f = Math.max(9, Math.round(H * .022));
+  ctx.font = `${f}px 'IBM Plex Mono', monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const l1 = 'MOUSE NOT RESPONDING?';
+  const l2 = 'F2 for cursor steering · or open this page in its own tab';
+  const w = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) + 34;
+  const y = Math.round(H * .24);
+  ctx.fillStyle = 'rgba(10,8,6,.8)';
+  ctx.fillRect(W / 2 - w / 2, y - 5, w, f * 2.7);
+  ctx.fillStyle = '#8A7558'; ctx.fillRect(W / 2 - w / 2, y - 5, w, 2);
+  ctx.fillStyle = '#D8A020'; ctx.fillText(l1, W / 2, y + 2);
+  ctx.fillStyle = '#C8BCA4'; ctx.fillText(l2, W / 2, y + f * 1.3);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+function drawDiag() {
+  const rows = [
+    `build       ${BUILD}`,
+    `pointerLock ${isLocked() ? 'ACTIVE' : 'off'}`,
+    `lockDenied  ${lockDenied}`,
+    `steerX      ${steerX === null ? 'null' : steerX.toFixed(3)}`,
+    `mouse ev/s  ${mmCount}`,
+    `movementX/s ${mmSum.toFixed(0)}  (max ${mmMax.toFixed(0)})`,
+    `mode        ${steering() ? 'CURSOR STEER' : 'CAPTURE'}`,
+    `pendingTurn ${pendingTurn.toFixed(4)}`,
+    `dir         ${(S.dir % TAU).toFixed(2)} rad`,
+    `embedded    ${EMBEDDED}`,
+    `canvas      ${W}x${H}`
+  ];
+  const f = Math.max(9, Math.round(H * .021));
+  ctx.font = `${f}px 'IBM Plex Mono', monospace`;
+  ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+  const w = Math.max(...rows.map(r => ctx.measureText(r).width)) + 20;
+  const y0 = Math.round(H * .46);
+  ctx.fillStyle = 'rgba(10,8,6,.86)';
+  ctx.fillRect(10, y0 - 6, w, rows.length * f * 1.35 + 12);
+  ctx.fillStyle = '#8A7558'; ctx.fillRect(10, y0 - 6, w, 2);
+  rows.forEach((r, i) => {
+    ctx.fillStyle = i === 1 ? (isLocked() ? '#9BE86A' : '#FF6A2A') : '#C8BCA4';
+    ctx.fillText(r, 20, y0 + i * f * 1.35);
+  });
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawLockPrompt() {
+  const f = Math.max(10, Math.round(H * .030));
+  const steer = steering();
+  const line1 = steer ? 'CURSOR STEERING' : 'CLICK TO CAPTURE THE MOUSE';
+  const line2 = steer ? 'move left or right of centre to turn — further out turns faster'
+                      : 'Esc releases it again';
+  const line3 = steer ? (EMBEDDED ? 'open in its own browser tab for captured mouse look · F2 to switch'
+                                  : 'F2 switches back to mouse capture') : '';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `${f}px 'IBM Plex Mono', monospace`;
+  const w = Math.max(ctx.measureText(line1).width, ctx.measureText(line2).width * .8,
+                     line3 ? ctx.measureText(line3).width * .8 : 0) + 40;
+  const y = Math.round(H * .34);
+  ctx.fillStyle = 'rgba(10,8,6,.86)';
+  ctx.fillRect(W / 2 - w / 2, y - f * 1.5, w, f * (line3 ? 4.1 : 3.2));
+  ctx.fillStyle = '#8A7558';
+  ctx.fillRect(W / 2 - w / 2, y - f * 1.5, w, 2);
+  ctx.fillStyle = '#D42020'; ctx.fillText(line1, W / 2, y - f * .35);
+  ctx.fillStyle = '#C8BCA4'; ctx.font = `${Math.round(f * .72)}px 'IBM Plex Mono', monospace`;
+  ctx.fillText(line2, W / 2, y + f * .85);
+  if (line3) { ctx.fillStyle = '#8A7558'; ctx.fillText(line3, W / 2, y + f * 1.75); }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+
+function drawWeapon() {
+  const w = WEAPONS[S.weapon], img = IMG[w.sprite];
+  if (!img || !img.width) return;
+  const hh = H * w.scale, ww = hh * (img.width / img.height);
+  const sway = Math.sin(S.bob) * H * .012, swayX = Math.cos(S.bob / 2) * W * .006;
+  if (w.fp) {                                   // art already drawn down the barrel
+    const x = Math.round(W / 2 - ww / 2 + swayX), yTop = Math.round(H - hh + S.kick * .6 + sway);
+    const firing = S.flash > .25 && IMG[w.fireSprite] && IMG[w.fireSprite].width;
+    ctx.drawImage(firing ? IMG[w.fireSprite] : img, x, yTop, ww, hh);
+    if (!firing && S.flash > .25) muzzleFlash(W / 2 + swayX, yTop + hh * .11, hh * .22, S.flash, w.flashHue);
+    return;
+  }
+  ctx.save();
+  // grip sits bottom-right; mirror where the art faces the wrong way, then rake the
+  // muzzle up and inward so it points at the crosshair
+  ctx.translate(W * w.ax + swayX, H - hh * w.ay + S.kick * .45 + sway);
+  if (w.flip) ctx.scale(-1, 1);
+  ctx.rotate(w.rot);
+  ctx.drawImage(img, -ww * 0.80, -hh * 0.92, ww, hh);
+  if (S.flash > .3) {
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = S.flash;
+    ctx.fillStyle = S.weapon === 'bfg' ? '#9BE86A' : '#FFD25A';
+    ctx.beginPath();
+    ctx.ellipse(-ww * 0.74, -hh * 0.66, W * .05, H * .06, 0, 0, TAU);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+/* A Doom muzzle flash is a hard-edged starburst, not a soft bloom: layered
+   polygons with jittered spikes, brightest in the middle, no blur. */
+function muzzleFlash(cx, cy, r, t, hue) {
+  const a = Math.min(1, t * 1.5);
+  const seed = Math.floor(S.lastShot);
+  const rand = i => { const v = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453; return v - Math.floor(v); };
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const rings = hue === 'green'
+    ? [[r * 1.65, 'rgba(120,220,90,', .30], [r * 1.05, 'rgba(190,255,150,', .62], [r * .55, 'rgba(240,255,225,', .95]]
+    : [[r * 1.65, 'rgba(255,120,20,',  .30], [r * 1.05, 'rgba(255,200,70,',  .62], [r * .55, 'rgba(255,248,210,', .95]];
+  for (let k = 0; k < rings.length; k++) {
+    const rad = rings[k][0], rgb = rings[k][1], alpha = rings[k][2];
+    ctx.fillStyle = rgb + (alpha * a).toFixed(3) + ')';
+    ctx.beginPath();
+    const pts = 12;
+    for (let i = 0; i <= pts; i++) {
+      const ang = i / pts * TAU;
+      const spike = i % 2 ? .45 + rand(i + k * 9) * .25 : 1;
+      const rr = rad * spike;
+      const px = cx + Math.cos(ang) * rr, py = cy + Math.sin(ang) * rr * .78;
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    }
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawCrosshair() {
+  const cx = Math.round(W / 2), cy = Math.round(H / 2);
+  const gap = 3 + S.xhair * 5, len = Math.max(4, Math.round(W * .012));
+  const hot = aimed ? '#FF3A1E' : '#C8BCA4';
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.fillRect(cx - gap - len - 1, cy - 1, len + 2, 3);
+  ctx.fillRect(cx + gap - 1, cy - 1, len + 2, 3);
+  ctx.fillRect(cx - 1, cy - gap - len - 1, 3, len + 2);
+  ctx.fillRect(cx - 1, cy + gap - 1, 3, len + 2);
+  ctx.fillStyle = hot;
+  ctx.fillRect(cx - gap - len, cy, len, 1);
+  ctx.fillRect(cx + gap, cy, len, 1);
+  ctx.fillRect(cx, cy - gap - len, 1, len);
+  ctx.fillRect(cx, cy + gap, 1, len);
+  ctx.fillRect(cx, cy, 1, 1);
+}
+
+function drawTarget() {
+  if (!aimed || aimed.dist > 15) return;
+  const e = aimed.e, f = Math.max(7, Math.round(H * .024));
+  ctx.font = `${f}px 'IBM Plex Mono', monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const y = Math.round(H * .42);
+  const fs = Math.max(6, f * .8);
+  ctx.font = `${fs}px 'IBM Plex Mono', monospace`;
+  const hintW = ctx.measureText(e.hint).width;
+  ctx.font = `${f}px 'IBM Plex Mono', monospace`;
+  const tw = Math.max(ctx.measureText(e.name).width, hintW) + 22;
+  ctx.fillStyle = 'rgba(10,8,6,.78)';
+  ctx.fillRect(W / 2 - tw / 2, y - 4, tw, f * 3.1);
+  ctx.fillStyle = '#6E5A3C';
+  ctx.fillRect(W / 2 - tw / 2, y - 4, tw, 1);
+  ctx.fillStyle = '#FF3A1E'; ctx.fillText(e.name, W / 2, y);
+  ctx.fillStyle = '#9A8E76'; ctx.font = `${fs}px 'IBM Plex Mono', monospace`;
+  ctx.fillText(e.hint, W / 2, y + f * 1.15);
+  const bw = Math.round(W * .1), bh = Math.max(2, Math.round(H * .006));
+  const bx = Math.round(W / 2 - bw / 2), by = Math.round(y + f * 2.2);
+  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+  ctx.fillStyle = '#D42020'; ctx.fillRect(bx, by, Math.round(bw * clamp(e.hp / KINDS[e.kind].hp, 0, 1)), bh);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+function drawObjective() {
+  const [main, sub] = objective();
+  const f = Math.max(7, Math.round(H * .026));
+  ctx.textBaseline = 'top';
+  ctx.font = `${f}px 'IBM Plex Mono', monospace`;
+  const pw = Math.max(ctx.measureText(main).width, sub ? ctx.measureText(sub).width * .78 : 0) + 18;
+  ctx.fillStyle = 'rgba(10,8,6,.72)';
+  ctx.fillRect(0, 4, pw, f * (sub ? 3.3 : 2.2));
+  ctx.fillStyle = '#6E5A3C'; ctx.fillRect(0, 4, 2, f * (sub ? 3.3 : 2.2));
+  ctx.font = `${Math.max(6, f * .72)}px 'IBM Plex Mono', monospace`;
+  ctx.fillStyle = '#8A7558'; ctx.fillText('OBJECTIVE', 10, 9);
+  ctx.font = `${f}px 'IBM Plex Mono', monospace`;
+  ctx.fillStyle = '#F2B544'; ctx.fillText(main, 10, 9 + f * .95);
+  if (sub) {
+    ctx.font = `${Math.max(6, f * .74)}px 'IBM Plex Mono', monospace`;
+    ctx.fillStyle = '#9A8E76'; ctx.fillText(sub, 10, 9 + f * 2.15);
+  }
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawMap() {
+  const cell = Math.max(2, Math.round(Math.min(W, H) * .018));
+  const ox = W - MAP_W * cell - 10, oy = 10;
+  ctx.fillStyle = 'rgba(4,10,9,.82)';
+  ctx.fillRect(ox - 4, oy - 4, MAP_W * cell + 8, MAP_H * cell + 8);
+  for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) {
+    const t = at(x, y);
+    if (!t) continue;
+    ctx.fillStyle = t === 5 ? (S.cards ? '#6A665E' : '#D8A020')
+      : t === 4 ? '#7A2018' : t === 2 ? '#3C5230' : t === 3 ? '#7A5A38' : '#8A7558';
+    ctx.fillRect(ox + x * cell, oy + y * cell, cell - 1, cell - 1);
+  }
+  for (const it of items) if (!it.taken) {
+    ctx.fillStyle = it.type === 'card' ? '#D8A020' : '#9BE86A';
+    ctx.fillRect(ox + it.x * cell - 1, oy + it.y * cell - 1, cell, cell);
+  }
+  ctx.fillStyle = '#F6ECD8';
+  ctx.fillRect(ox + S.px * cell - 1, oy + S.py * cell - 1, cell, cell);
+}
+
+function drawHUD() {
+  const h = Math.round(H * .135), y = H - h;
+  const bar = ctx.createLinearGradient(0, y, 0, H);
+  bar.addColorStop(0, '#6A563C'); bar.addColorStop(.12, '#4A3A28'); bar.addColorStop(1, '#2A2118');
+  ctx.fillStyle = bar; ctx.fillRect(0, y, W, h);
+  ctx.fillStyle = '#8A7558'; ctx.fillRect(0, y, W, 2);
+  ctx.fillStyle = '#1A140E'; ctx.fillRect(0, y + 2, W, 1);
+  for (let i = 0; i < 5; i++) { ctx.fillStyle = 'rgba(26,20,14,.55)'; ctx.fillRect(Math.round(W * (.20 + i * .15)), y + 4, 1, h - 6); }
+  const f = Math.max(7, Math.round(h * .28));
+  ctx.font = `${f}px 'IBM Plex Mono', monospace`; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  const cell = (label, val, cx, color) => {
+    ctx.fillStyle = '#C8BCA4'; ctx.font = `${Math.max(6, f * .66)}px 'IBM Plex Mono', monospace`;
+    ctx.fillText(label, cx, y + h * .28);
+    ctx.font = `${Math.round(f * 1.5)}px 'Anton', Impact, sans-serif`;
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillText(val, cx + 1, y + h * .70 + 1);
+    ctx.fillStyle = color; ctx.fillText(val, cx, y + h * .70);
+  };
+  cell('HEALTH', Math.ceil(S.hp) + '%', W * .10, S.hp > 35 ? '#D42020' : '#FF6A2A');
+  cell(WEAPONS[S.weapon].name, S.ammo[S.weapon] === Infinity ? '∞' : String(S.ammo[S.weapon]), W * .30, '#D42020');
+  const key = S.won ? 'face-victory.png'
+    : (S.hurt > .25 || S.hp < 45 || now0() - S.lastShot < 350) ? 'face-angry.png' : 'face-calm.png';
+  const face = IMG[key];
+  if (face && face.width) {
+    const fh = Math.round(h * .88), fw = Math.round(fh * (face.width / face.height));
+    ctx.drawImage(face, Math.round(W / 2 - fw / 2), Math.round(y + h * .06), fw, fh);
+  }
+  cell('PLANS RETIRED', `${S.plans}/${TOTALS.plans}`, W * .71, '#D42020');
+  cell('CLEARANCE', S.cards ? 'HELD' : '--', W * .89, S.cards ? '#D8A020' : '#6E6454');
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+const now0 = () => performance.now();
+
+/* ---------- loop ---------------------------------------------------------- */
+let last = 0;
+function frame(t) {
+  const dt = Math.min(.05, (t - last) / 1000 || 0); last = t;
+  if (S.running && !S.over) step(dt);
+  if (ready >= NEED.length) render();
+  requestAnimationFrame(frame);
+}
+buildTextures();
+requestAnimationFrame(frame);
+
+/* ---------- menus --------------------------------------------------------- */
+const menu = document.getElementById('menu'), endOv = document.getElementById('end');
+function startGame() {
+  populate();
+  Object.assign(S, { px:2.5, py:3.5, dir:0, hp:100, weapon:'shotgun', kills:0, plans:0, flakes:0,
+    timeouts:0, cards:0, secrets:0, over:false, won:false, running:true, started:performance.now(),
+    kick:0, flash:0, hurt:0, bob:0, lastShot:0, showMap:false, doorNag:0 });
+  S.ammo = { shotgun:Infinity, bfg:3 };
+  menu.classList.add('hidden'); endOv.classList.add('hidden');
+  if (!S.forceSteer) grabMouse(); else document.exitPointerLock?.();
+}
+document.getElementById('start').addEventListener('click', startGame);
+const tabBtn = document.getElementById('newtab');
+if (EMBEDDED) {
+  tabBtn.classList.remove('hidden');
+  tabBtn.title = 'Pointer lock is unreliable inside an embedded frame';
+  document.getElementById('frameNote').style.display = '';
+  document.getElementById('tabKey').style.display = '';
+  document.getElementById('tabKeyLabel').style.display = '';
+  tabBtn.addEventListener('click', openFullTab);
+}
+
+function finish(won) {
+  if (S.over) return;
+  S.over = true; S.running = false; S.won = won;
+  document.exitPointerLock?.();
+  const secs = Math.max(1, Math.round((performance.now() - S.started) / 1000));
+  const mm = String(Math.floor(secs / 60)).padStart(2, '0'), ss = String(secs % 60).padStart(2, '0');
+  document.getElementById('endCard').innerHTML = `
+    <h2>${won ? 'E1M1 CLEARED' : 'YOU DIED'}</h2>
+    <div class="sub">${won ? 'The Legacy Estate is empty' : 'The estate wins this round'}</div>
+    <table>
+      <tr><td>Legacy plans retired</td><td>${S.plans} / ${TOTALS.plans}</td></tr>
+      <tr><td>Flaky tests fixed</td><td>${S.flakes} / ${TOTALS.flakes}</td></tr>
+      <tr><td>Gateway timeouts cleared</td><td>${S.timeouts} / ${TOTALS.timeouts}</td></tr>
+      <tr><td>PR packs found</td><td>${S.secrets} / 3</td></tr>
+      <tr><td>Kills</td><td>${Math.round(S.kills / TOTALS.enemies * 100)}%</td></tr>
+      <tr><td>Time</td><td>${mm}:${ss}</td></tr>
+      ${won ? '<tr><td>The Monolith</td><td>DOWN</td></tr>' : ''}
+    </table>
+    <p class="note">In real life this took <b>under 4 months</b>: ~110 App Service plans became ~280 Container
+      Apps, 54 plans and 115 web apps were retired in a single day, and the cost programme booked
+      <b>~$590k/yr</b> in confirmed savings.</p>
+    <div class="row">
+      <a class="btn primary" href="${GH}cloud-replatform" target="_blank" rel="noopener">Read how it actually happened ↗</a>
+      <a class="btn" href="https://github.com/nik-hagoort/Portfolio" target="_blank" rel="noopener">Full portfolio ↗</a>
+      <button id="again">Replay</button>
+    </div>`;
+  endOv.classList.remove('hidden');
+  document.getElementById('again').addEventListener('click', startGame);
+}
+
+// a tiny hook so the level can be driven headlessly in tests
+window.__doomops = { S, ents, items, startGame, shoot, objective, render, resize };
+})();
+</script>
+</body>
+</html>

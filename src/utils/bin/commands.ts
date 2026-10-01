@@ -61,6 +61,18 @@ export const linkedin = async (args: string[]): Promise<string> => {
   return 'Opening linkedin...';
 };
 
+// DOOMOPS — the portfolio as a first-person shooter
+export const doom = async (args: string[]): Promise<string> => {
+  window.open('/doom', '_blank');
+  return `Loading DOOMOPS...
+
+E1M1 - THE LEGACY ESTATE
+Everything you kill in there is a real problem I solved at work.
+Opens in a new tab so the mouse behaves.`;
+};
+
+export const doomops = doom;
+
 // Search
 export const google = async (args: string[]): Promise<string> => {
   window.open(`https://google.com/search?q=${args.join(' ')}`);
@@ -144,6 +156,7 @@ Hey there! Welcome to the professional site of
                                                                                      
                                                                  
 Type 'help' to see the list of available commands.
+Type 'doom' to play DOOMOPS - my career as a first-person shooter.
 Type 'sumfetch' to display my summary (about me).
 Type 'repo' or click <u><a class="text-light-blue dark:text-dark-blue underline" href="${config.repo}" target="_blank">here</a></u> for the Github portfolio.
 `;
